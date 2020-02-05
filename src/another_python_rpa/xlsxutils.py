@@ -125,7 +125,7 @@ def main(args):
     args = parse_args(args)
     setup_logging(args.loglevel)
     _logger.debug("Iniciando processamento...")
-    print("O arquivo {} possui as informações abaixo:\n\t {}".format(args.file, util(args.file)))
+    print("O arquivo {} possui as informações abaixo:\n\n {}".format(args.file, util(args.file)))
     _logger.info("Script ends here")
 
 
