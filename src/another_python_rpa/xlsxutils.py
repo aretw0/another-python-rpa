@@ -30,103 +30,102 @@ _logger = logging.getLogger(__name__)
 
 
 def util(file):
-    """Leitor de planilhas xlsx example function
+  """Leitor de planilhas xlsx example function
 
-    Args:
-      file (string): Arquivo
+  Args:
+    file (string): Arquivo
 
-    Returns:
-      dic: dicionário com informações úteis sobre a planilha
-    """
-    obj = {
-      "nrows": 0,
-      "rows": []
-    }
-    try:       
-      loc = (file)
-      wb = xlrd.open_workbook(loc) 
-      sheet = wb.sheet_by_index(0)
+  Returns:
+    dic: dicionário com informações úteis sobre a planilha
+  """
+  obj = {
+    "nrows": 0,
+    "rows": []
+  }
+  try:       
+    loc = (file)
+    wb = xlrd.open_workbook(loc) 
+    sheet = wb.sheet_by_index(0)
 
-      if sheet.nrows > 0:
-        obj["nrows"] = sheet.nrows
-        nameCols = []
+    if sheet.nrows > 0:
+      obj["nrows"] = sheet.nrows
+      nameCols = []
 
-        for i in range(sheet.ncols): 
-          nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else "MissingNo")
-        
-        for i in range(1, sheet.nrows):
-          obj["rows"].append({})
-          for x in range(sheet.ncols):
-            celVal = sheet.cell_value(i, x)
-            obj["rows"][i-1][nameCols[x]] = celVal if celVal else "MissingNo"
-
-      return obj
-    except IOError:
-      print("Erro na abertura do arquivo")
-      return obj
+      for i in range(sheet.ncols): 
+        nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else "MissingNo")
+      
+      for i in range(1, sheet.nrows):
+        obj["rows"].append({})
+        for x in range(sheet.ncols):
+          celVal = sheet.cell_value(i, x)
+          obj["rows"][i-1][nameCols[x]] = celVal if celVal else "MissingNo"
+  except IOError:
+    print("Erro na abertura do arquivo")
+  
+  return obj
 
 
 
 def parse_args(args):
-    """Parse command line parameters
+  """Parse command line parameters
 
-    Args:
-      file (str): command line paramete as file to be open
+  Args:
+    file (str): command line paramete as file to be open
 
-    Returns:
-      :obj:`argparse.Namespace`: command line parameters namespace
-    """
-    parser = argparse.ArgumentParser(
-        description="Utilitário de processamento de planilha")
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="another-python-rpa {ver}".format(ver=__version__),
-        help="Mostra a versão do script")
-    parser.add_argument(
-        dest="file",
-        help="Arquivo de planilha",
-        type=str,
-        metavar="FILE")
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        dest="loglevel",
-        help="set loglevel to INFO",
-        action="store_const",
-        const=logging.INFO)
-    parser.add_argument(
-        "-vv",
-        "--very-verbose",
-        dest="loglevel",
-        help="set loglevel to DEBUG",
-        action="store_const",
-        const=logging.DEBUG)
-    return parser.parse_args(args)
+  Returns:
+    :obj:`argparse.Namespace`: command line parameters namespace
+  """
+  parser = argparse.ArgumentParser(
+    description="Utilitário de processamento de planilha")
+  parser.add_argument(
+    "--version",
+    action="version",
+    version="another-python-rpa {ver}".format(ver=__version__),
+    help="Mostra a versão do script")
+  parser.add_argument(
+    dest="file",
+    help="Arquivo de planilha",
+    type=str,
+    metavar="FILE")
+  parser.add_argument(
+    "-v",
+    "--verbose",
+    dest="loglevel",
+    help="set loglevel to INFO",
+    action="store_const",
+    const=logging.INFO)
+  parser.add_argument(
+    "-vv",
+    "--very-verbose",
+    dest="loglevel",
+    help="set loglevel to DEBUG",
+    action="store_const",
+    const=logging.DEBUG)
+  return parser.parse_args(args)
 
 
 def setup_logging(loglevel):
-    """Setup basic logging
+  """Setup basic logging
 
-    Args:
-      loglevel (int): minimum loglevel for emitting messages
-    """
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(level=loglevel, stream=sys.stdout,
-                        format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
+  Args:
+    loglevel (int): minimum loglevel for emitting messages
+  """
+  logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+  logging.basicConfig(level=loglevel, stream=sys.stdout,
+                      format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
 
 
 def main(args):
-    """Main entry point allowing external calls
+  """Main entry point allowing external calls
 
-    Args:
-      args ([str]): command line parameter list
-    """
-    args = parse_args(args)
-    setup_logging(args.loglevel)
-    _logger.debug("Iniciando processamento...")
-    print("O arquivo {} possui as informações abaixo:\n\n {}".format(args.file, util(args.file)))
-    _logger.info("Script ends here")
+  Args:
+    args ([str]): command line parameter list
+  """
+  args = parse_args(args)
+  setup_logging(args.loglevel)
+  _logger.debug("Iniciando processamento...")
+  print("O arquivo {} possui as informações abaixo:\n\n {}".format(args.file, util(args.file)))
+  _logger.info("Script ends here")
 
 
 def run():
