@@ -1,0 +1,42 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FormUtils POST ",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "args": [
+        "--post",
+        "https://docs.google.com/forms/d/e/1FAIpQLSdGVA7C8LT_fWMetUZ7xbbaMqGmLqYutzqYwhPwyI7ypzyWXA/viewform",
+        "-q",
+        "entry.545868341",
+        "entry.95052872",
+        "entry.874388139",
+        "entry.894934887",
+        "entry.511950945",
+        "-a",
+        "Arthur Teste",
+        "Produto A",
+        "59625495",
+        "Rua Seu Né Bezerra, 1620, Pres. Costa e Silva",
+        "Residencial"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FormUtils GET ",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "args": [
+        "--get",
+        "https://docs.google.com/forms/d/e/1FAIpQLSdGVA7C8LT_fWMetUZ7xbbaMqGmLqYutzqYwhPwyI7ypzyWXA/viewform"
+      ],
+      "console": "integratedTerminal"
+    }
+  ]
+}
