@@ -31,11 +31,22 @@ __license__ = "mit"
 
 _logger = logging.getLogger(__name__)
 
-async def post_answers(form_url, questions, answers, verbose=False):
+async def post_answers(url, questions, answers, verbose=False):
+  """Submete respostas a um formulário
+
+  Args:
+    url (string): URL do formulário
+    questions (list): Questões do formulário no formato 'entry.99999[*]
+    answers (list): Respostas do formulário
+    verbose (boolean): Verbosidade do método
+
+  Returns:
+    int: Códido HTTP da submissão
+  """
   if not len(questions) == len(answers):
     raise Exception("A quantidade de questões e respostas não é a mesma")
   
-  submit_url = form_url.replace('/viewform', '/formResponse')
+  submit_url = url.replace('/viewform', '/formResponse')
   form_data = {'draftResponse':[],
               'pageHistory':0}
   for q, a in zip(questions, answers):
@@ -43,32 +54,33 @@ async def post_answers(form_url, questions, answers, verbose=False):
   
   if verbose:
     print(form_data)
-  user_agent = {'Referer':form_url,
+  user_agent = {'Referer':url,
                 'User-Agent': "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36"}
   res = requests.post(submit_url, data=form_data, headers=user_agent)
   return res.status_code
 
-async def get_questions(in_url):
-  try:
-    res = urllib.request.urlopen(in_url)
-    soupHtml = BeautifulSoup(res.read(), 'html.parser')
-    get_labels = lambda f: [v for k, v in f.attrs.items() if 'label' in k]
-    get_label = lambda f, n: get_labels(f)[0] if len(get_labels(f))>0 else n
-    all_questions = soupHtml.form.findChildren(attrs={'name': lambda x: x and x.startswith('entry.')})
-    all_div_labels = soupHtml.form.findChildren(attrs={'class': lambda x: x and x.startswith('freebirdFormviewerViewItemsItemItemTitle ')})
-    all_labels = [str(k).strip() for k, v in all_div_labels]
-    if len(all_labels) == len(all_questions):
-      return {get_label(q, l): q['name'] for q, l in zip(all_questions, all_labels)}   
-    else:
-      raise Exception("A quantidade de questões e títulos não é a mesma")
-  except urllib.error.URLError as error:
-    print(error)
-    print("Falha na obtenção do formulário")
+async def get_questions(url):
+  """Extrai questões e seus títulos de um formulário
+
+  Args:
+    url (string): URL do formulário
+
+  Returns:
+    dic: Relação de títulos e questões do formulário
+  """
+  res = urllib.request.urlopen(url)
+  soupHtml = BeautifulSoup(res.read(), 'html.parser')
+  get_labels = lambda f: [v for k, v in f.attrs.items() if 'label' in k]
+  get_label = lambda f, n: get_labels(f)[0] if len(get_labels(f))>0 else n
+  all_questions = soupHtml.form.findChildren(attrs={'name': lambda x: x and x.startswith('entry.')})
+  all_div_labels = soupHtml.form.findChildren(attrs={'class': lambda x: x and x.startswith('freebirdFormviewerViewItemsItemItemTitle ')})
+  all_labels = [str(k).strip() for k, v in all_div_labels]
+  if len(all_labels) == len(all_questions):
+    return {get_label(q, l): q['name'] for q, l in zip(all_questions, all_labels)}   
+  else:
+    raise Exception("A quantidade de questões e títulos não é a mesma")
     
   
-  
-
-
 def parse_args(args):
     """Parse command line parameters
 

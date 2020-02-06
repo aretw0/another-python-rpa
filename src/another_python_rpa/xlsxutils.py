@@ -29,14 +29,15 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-def util(file):
-  """Leitor de planilhas xlsx example function
+def extract(file, missfield ="MissingNo"):
+  """Extrator de informações de planilhas xlsx
 
   Args:
     file (string): Arquivo
+    missfield (string): Texto para por no lugar das células vazias
 
   Returns:
-    dic: dicionário com informações úteis sobre a planilha
+    dic: dicionário com informações da planilha
   """
   obj = {
     "nrows": 0,
@@ -51,13 +52,13 @@ def util(file):
     nameCols = []
 
     for i in range(sheet.ncols): 
-      nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else "MissingNo")
+      nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else missfield)
     
     for i in range(1, sheet.nrows):
       obj["rows"].append({})
       for x in range(sheet.ncols):
         celVal = sheet.cell_value(i, x)
-        obj["rows"][i-1][nameCols[x]] = celVal if celVal else "MissingNo"
+        obj["rows"][i-1][nameCols[x]] = celVal if celVal else missfield
   
   return obj
 
@@ -87,6 +88,14 @@ def parse_args(args):
     required=False,
     type=str,
     metavar="FILE")
+  parser.add_argument(
+    "-mf",
+    "--missfield",
+    dest="missfield",
+    help="Usa para preencher campos da planilha que estiverem vazios. Default: MissingNo",
+    default="MissingNo",
+    type=str,
+    metavar="MISS FIELD")
   parser.add_argument(
     "-v",
     "--verbose",
@@ -129,7 +138,7 @@ def main(args):
     print("Informe o arquivo (caminho completo): ")
     file = input()
 
-  print("O arquivo {} possui as informações abaixo:\n\n {}".format(file, util(file)))
+  print("O arquivo {} possui as informações abaixo:\n\n {}".format(file, extract(file, args.missfield)))
   _logger.info("Script ends here")
 
 
