@@ -41,26 +41,23 @@ def util(file):
   obj = {
     "nrows": 0,
     "rows": []
-  }
-  try:       
-    loc = (file)
-    wb = xlrd.open_workbook(loc) 
-    sheet = wb.sheet_by_index(0)
+  }    
+  loc = (file)
+  wb = xlrd.open_workbook(loc) 
+  sheet = wb.sheet_by_index(0)
 
-    if sheet.nrows > 0:
-      obj["nrows"] = sheet.nrows
-      nameCols = []
+  if sheet.nrows > 0:
+    obj["nrows"] = sheet.nrows
+    nameCols = []
 
-      for i in range(sheet.ncols): 
-        nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else "MissingNo")
-      
-      for i in range(1, sheet.nrows):
-        obj["rows"].append({})
-        for x in range(sheet.ncols):
-          celVal = sheet.cell_value(i, x)
-          obj["rows"][i-1][nameCols[x]] = celVal if celVal else "MissingNo"
-  except IOError:
-    print("Erro na abertura do arquivo")
+    for i in range(sheet.ncols): 
+      nameCols.append(sheet.cell_value(0, i) if sheet.cell_value(0, i) else "MissingNo")
+    
+    for i in range(1, sheet.nrows):
+      obj["rows"].append({})
+      for x in range(sheet.ncols):
+        celVal = sheet.cell_value(i, x)
+        obj["rows"][i-1][nameCols[x]] = celVal if celVal else "MissingNo"
   
   return obj
 
@@ -83,8 +80,11 @@ def parse_args(args):
     version="another-python-rpa {ver}".format(ver=__version__),
     help="Mostra a versão do script")
   parser.add_argument(
+    "--file",
+    "-f",
     dest="file",
     help="Arquivo de planilha",
+    required=False,
     type=str,
     metavar="FILE")
   parser.add_argument(
@@ -124,7 +124,12 @@ def main(args):
   args = parse_args(args)
   setup_logging(args.loglevel)
   _logger.debug("Iniciando processamento...")
-  print("O arquivo {} possui as informações abaixo:\n\n {}".format(args.file, util(args.file)))
+  file = args.file
+  if not file:
+    print("Informe o arquivo (caminho completo): ")
+    file = input()
+
+  print("O arquivo {} possui as informações abaixo:\n\n {}".format(file, util(file)))
   _logger.info("Script ends here")
 
 
