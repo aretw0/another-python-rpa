@@ -5,6 +5,31 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "XLSXUTILS",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "args": [
+        "-f",
+        "C:\\Users\\Arthur\\Documents\\Teste de automacao v2.xlsx",
+        "-mf",
+        "MissingField"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "RPA",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "args": [
+        "https://docs.google.com/forms/d/e/1FAIpQLSdGVA7C8LT_fWMetUZ7xbbaMqGmLqYutzqYwhPwyI7ypzyWXA/viewform",
+        "-f",
+        "C:\\Users\\Arthur\\Documents\\Teste de automacao v2.xlsx"
+      ],
+      "console": "integratedTerminal"
+    },
+    {
       "name": "FormUtils POST ",
       "type": "python",
       "request": "launch",
