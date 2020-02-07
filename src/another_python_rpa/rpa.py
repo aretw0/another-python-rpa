@@ -34,14 +34,14 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-async def rpa(window, url, file, name, bar=None):
+async def rpa(url, file, name, window=None, bar=None):
   """RPA function
   Args:
-    window (tkinter): window para atualizar
     url (string): URL do formulário
     file (string): Arquivo da planilha
     name (string): Nome do candidato
-    bar (widget): Barra de progresso
+    window (tkinter): window para atualizar
+    bar (boolean): Barra de progresso
 
   Returns:
     int: Códido HTTP da submissão
@@ -71,23 +71,26 @@ async def rpa(window, url, file, name, bar=None):
       "notOk": 0
     }
     lenTasks = len(tasks)
-    if bar:
-      bar.configure(length=lenTasks)
-      bar['value'] = 0
-    for response in await asyncio.gather(*tasks):
-      result["ok" if response == 200 else "notOk"] += 1
-    return result
-    """ 
+    if bar and window:
+      style = ttk.Style()
+      style.theme_use('default')
+      style.configure("blue.Horizontal.TProgressbar", background='blue')
+      submitBar = Progressbar(window, style='blue.Horizontal.TProgressbar')
+      submitBar.grid(padx=10, pady=(0,10), columnspan=2, sticky=W+E) 
+      submitBar['value'] = 0
+      submitBar["maximum"]=lenTasks    
     while len(tasks):
-      for asyncio.gather(*tasks)
       done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
       for task in done:
-        print("Done!")
-        bar['value'] += 1
-        window.update()
+        if window and bar:
+          submitBar['value'] += 1
+        if window:
+          window.update()
         result["ok" if task.result() == 200 else "notOk"] += 1
+    if window and bar:
+      submitBar.destroy()
     return result
-    """
+   
 
 window = None
 nameEntry = None
@@ -100,8 +103,6 @@ formVar = None
 
 submitBtn = None
 fileBtn = None
-
-submitBar = None
 
 def rpa_window(url,file,name="", default_name ="Arthur Aleksandro Alves Silva"):
   # fonte e texto de apresentação
@@ -159,13 +160,14 @@ def rpa_window(url,file,name="", default_name ="Arthur Aleksandro Alves Silva"):
       loop = asyncio.get_event_loop()
       try:
         messagebox.showwarning('ATENÇÃO', 'É bem provável que esta aplicação fique sem responder durante o processamento. Peço que apenas aguarde e se tiver controle sobre o fomulário verifique se as respostas estão incrementando.')
-        future = asyncio.ensure_future(rpa(window, formVar.get(), fileVar.get(), nameVar.get(), submitBar))
+        future = asyncio.ensure_future(rpa(formVar.get(), fileVar.get(), nameVar.get(), window, True))
         result = loop.run_until_complete(future)
         messagebox.showinfo('Finalizado', '{} formulários submetidos com sucesso, {} falharam'.format(result['ok'],result['notOk']))
       except Exception as err:
+        print(err)
         messagebox.showerror('Erro', 'Algo errado aconteceu :(')
-      finally:
         loop.close()
+      finally:
         nameEntry.configure(state='normal')
         formEntry.configure(state='normal')
         fileEntry.configure(state='normal')
@@ -176,14 +178,7 @@ def rpa_window(url,file,name="", default_name ="Arthur Aleksandro Alves Silva"):
 
 
   submitBtn = Button(window, text="Submeter", command=submit, font=(useFont, 12))
-  submitBtn.grid(columnspan=2, padx=10, sticky=W+E)
-
-  style = ttk.Style()
-  style.theme_use('default')
-  style.configure("blue.Horizontal.TProgressbar", background='blue')
-
-  submitBar = Progressbar(window, style='blue.Horizontal.TProgressbar' )
-  submitBar.grid(padx=10, pady=10, columnspan=2, sticky=W+E) 
+  submitBtn.grid(columnspan=2, padx=10, pady=(0,10), sticky=W+E)
 
   window.mainloop()
 
