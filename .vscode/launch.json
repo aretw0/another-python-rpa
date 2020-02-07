@@ -23,6 +23,7 @@
       "request": "launch",
       "program": "${file}",
       "args": [
+        "--url",
         "https://docs.google.com/forms/d/e/1FAIpQLSdGVA7C8LT_fWMetUZ7xbbaMqGmLqYutzqYwhPwyI7ypzyWXA/viewform",
         "-f",
         "C:\\Users\\Arthur\\Documents\\Teste de automacao v2.xlsx"

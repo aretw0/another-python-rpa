@@ -19,7 +19,10 @@ import argparse
 import sys
 import logging
 import asyncio
-import another_python_rpa
+
+from tkinter import *
+from tkinter.ttk import Progressbar
+from tkinter import ttk, filedialog, messagebox
 
 from another_python_rpa import __version__, xlsxutils, formutils
 
@@ -30,38 +33,143 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-async def rpa(url, file, name=None, default_name ="Arthur Aleksandro Alves Silva",):
+async def rpa(url, file, name, bar=None):
   """RPA function
-    start and control view
-  """
-  try:
-    fileRel = xlsxutils.extract(file)
-    questsRel = await formutils.get_questions(url)
-    finalName = name if name else default_name
-    tasks = []
-    for row in fileRel['rows']:
-      row["Nome completo do candidato"] = finalName
-      quests = []
-      ans = []
-      for c, v in row.items():
-        if c in questsRel:
-          quests.append(questsRel[c])
-          ans.append(v)
-      tasks.append(formutils.post_answers(url, quests, ans))
-    result = []
-    while len(tasks):
-      done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-      for task in done:
-        result.append(task.result())
-    return result
-  except:
-    # todo: tratar melhor depois
-    raise Exception("Algo de errado aconteceu")
+  Args:
+    url (string): URL do formulário
+    file (string): Arquivo da planilha
+    name (string): Nome do candidato
+    bar (widget): Barra de progresso
 
-  # print([[(questsRel[c], v) for c, v in k.items() if c in questsRel] for k in fileRel['rows']])
-""" 
-  for f in fileRel:
-     name if name else default_name """
+  Returns:
+    int: Códido HTTP da submissão
+  """
+  fileRel = xlsxutils.extract(file)
+  questsRel = await formutils.get_questions(url)
+  tasks = []
+  for row in fileRel['rows']:
+    row["Nome completo do candidato"] = name
+    quests = []
+    ans = []
+    for c, v in row.items():
+      if c in questsRel:
+        quests.append(questsRel[c])
+        ans.append(v)
+    tasks.append(formutils.post_answers(url, quests, ans))
+  result = {
+    "ok": 0,
+    "notOk": 0
+  }
+  lenTasks = len(tasks)
+  if bar:
+    bar.configure(length=lenTasks)
+    bar['value'] = 0
+  while len(tasks):
+    done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+    for task in done:
+      bar['value'] += 1
+      result["ok" if task.result() == 200 else "notOk"] += 1
+  return result
+
+
+window = None
+nameEntry = None
+fileEntry = None
+formEntry = None
+
+nameVar = None
+fileVar = None
+formVar = None
+
+submitBtn = None
+fileBtn = None
+
+submitBar = None
+
+def rpa_window(url,file,name=None, default_name ="Arthur Aleksandro Alves Silva"):
+  # fonte e texto de apresentação
+  useFont = "Segoe UI"
+  presentText = "Esta aplicação automatiza a submissão em massa de formulários online (Google Forms) usando dados de uma planilha."
+  widthEntries = 27
+
+  window = Tk()
+  window.resizable(0,0)
+  window.title("Another Python RPA")
+  # window.geometry('800x600')
+  
+  # Labels
+  Label(window, text="Bem vindo!", font=(useFont, 15)).grid(row=0, column=0, columnspan=2,
+                                                          sticky=W+E+N+S, padx=5, pady=(5,0))  
+  Label(window, text=presentText, font=(useFont, 13), wraplength=380, justify='center').grid(
+    row=1, column=0, columnspan=2, sticky=W+E+N+S, padx=5, pady=(0,20))
+  
+  nameVar = StringVar()
+  fileVar = StringVar()
+  formVar = StringVar()
+
+  nameVar.set(name if name else default_name)
+  fileVar.set(file)
+  formVar.set(url)
+
+
+  nameEntry = Entry(window, textvariable=nameVar, font=(useFont, 12))
+  formEntry = Entry(window, textvariable=formVar, font=(useFont, 12))
+  fileEntry = Entry(window, textvariable=fileVar, font=(useFont, 12))
+
+  Label(window, text="Nome do candidato", font=(useFont, 12)).grid(columnspan=2,row=2, sticky=W, padx=10)
+  nameEntry.grid(column=0, columnspan=2, padx=10, sticky=W+E)
+
+  Label(window, text="Formulário (URL)", font=(useFont, 12)).grid(columnspan=2,row=4, sticky=W, padx=10, pady=(5,0))
+  formEntry.grid(column=0, columnspan=2, padx=10, sticky=W+E)
+
+  Label(window, text="Planilha", font=(useFont, 12)).grid(row=6, sticky=W, padx=(10,0), pady=(5,0))
+  fileEntry.grid(column=0, padx=(10,0), sticky=W+E, pady=(0,15))
+  
+  def getFile():
+    fileName = filedialog.askopenfilename(filetypes = (("Excel files","*.xlsx"),("all files","*.*")))
+    fileVar.set(fileName if fileName else fileVar.get())
+  
+  fileBtn = Button(window, text="Selecionar", command=getFile, font=(useFont, 0))
+  fileBtn.grid(column=1, row=7, sticky=W+E, pady=(0,15), padx=(5,10))
+
+  def submit():
+    if fileVar.get() and formVar.get() and nameVar.get():
+      nameEntry.configure(state='disabled')
+      formEntry.configure(state='disabled')
+      fileEntry.configure(state='disabled')
+      fileBtn.configure(state='disabled')
+      submitBtn.configure(state='disabled')
+      loop = asyncio.get_event_loop()
+      try:
+        messagebox.showwarning('ATENÇÃO', 'É bem provável que esta aplicação fique sem responder durante o processamento. Peço que apenas aguarde e se tiver controle sobre o fomulário verifique se as respostas estão incrementando.')
+        result = loop.run_until_complete(rpa(formVar.get(), fileVar.get(), nameVar.get(), submitBar))
+        messagebox.showinfo('Finalizado', '{} formulários submetidos com sucesso, {} falharam'.format(result['ok'],result['notOk']))
+      except Exception as err:
+        messagebox.showerror('Erro', 'Algo errado aconteceu :(')
+      finally:
+        loop.close()
+        nameEntry.configure(state='normal')
+        formEntry.configure(state='normal')
+        fileEntry.configure(state='normal')
+        fileBtn.configure(state='normal')
+        submitBtn.configure(state='normal')
+    else:
+      messagebox.showinfo('Campo(s) Inválido(s)', 'Preencha tudo corretamente e tente novamente')
+
+
+  submitBtn = Button(window, text="Submeter", command=submit, font=(useFont, 12))
+  submitBtn.grid(columnspan=2, padx=10, sticky=W+E)
+
+  style = ttk.Style()
+  style.theme_use('default')
+  style.configure("blue.Horizontal.TProgressbar", background='blue')
+
+  submitBar = Progressbar(window, style='blue.Horizontal.TProgressbar' )
+  submitBar.grid(padx=10, pady=10, columnspan=2, sticky=W+E) 
+
+
+
+  window.mainloop()
 
 
 def parse_args(args):
@@ -83,6 +191,7 @@ def parse_args(args):
     type=str,
     metavar="NOME")
   parser.add_argument(
+    "--url",
     dest="url",
     help="URL do formulário",
     type=str,
@@ -136,15 +245,19 @@ def main(args):
   setup_logging(args.loglevel)
   _logger.debug("Starting view and controllers...")
   # print("Argumentos recebidos: {}".format(args))
+  rpa_window(args.url,args.file,args.name)
+  """ 
   file = args.file
   if not file:
     print("Informe o arquivo (caminho completo): ")
     file = input()
+  """
+  """
   loop = asyncio.get_event_loop()
   try:
     loop.run_until_complete(rpa(args.url,file, args.name))
   finally:
-    loop.close()
+    loop.close() """
   _logger.info("Script ends here")
 
 
