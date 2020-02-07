@@ -21,7 +21,7 @@ import logging
 import asyncio
 import urllib.request
 from bs4 import BeautifulSoup
-import requests, warnings
+import requests
 
 from another_python_rpa import __version__
 
