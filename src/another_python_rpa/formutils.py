@@ -31,7 +31,7 @@ __license__ = "mit"
 
 _logger = logging.getLogger(__name__)
 
-async def post_answers(url, questions, answers, verbose=False):
+def post_answers(url, questions, answers, verbose=False):
   """Submete respostas a um formulário
 
   Args:
@@ -56,8 +56,8 @@ async def post_answers(url, questions, answers, verbose=False):
     print(form_data)
   user_agent = {'Referer':url,
                 'User-Agent': "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36"}
-  res = requests.post(submit_url, data=form_data, headers=user_agent)
-  return res.status_code
+  with requests.post(submit_url, data=form_data, headers=user_agent) as response:
+    return response.status_code
 
 async def get_questions(url):
   """Extrai questões e seus títulos de um formulário

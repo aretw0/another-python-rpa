@@ -19,6 +19,7 @@ import argparse
 import sys
 import logging
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from tkinter import *
 from tkinter.ttk import Progressbar
@@ -33,9 +34,10 @@ __license__ = "mit"
 _logger = logging.getLogger(__name__)
 
 
-async def rpa(url, file, name, bar=None):
+async def rpa(window, url, file, name, bar=None):
   """RPA function
   Args:
+    window (tkinter): window para atualizar
     url (string): URL do formulário
     file (string): Arquivo da planilha
     name (string): Nome do candidato
@@ -47,30 +49,45 @@ async def rpa(url, file, name, bar=None):
   fileRel = xlsxutils.extract(file)
   questsRel = await formutils.get_questions(url)
   tasks = []
-  for row in fileRel['rows']:
-    row["Nome completo do candidato"] = name
-    quests = []
-    ans = []
-    for c, v in row.items():
-      if c in questsRel:
-        quests.append(questsRel[c])
-        ans.append(v)
-    tasks.append(formutils.post_answers(url, quests, ans))
-  result = {
-    "ok": 0,
-    "notOk": 0
-  }
-  lenTasks = len(tasks)
-  if bar:
-    bar.configure(length=lenTasks)
-    bar['value'] = 0
-  while len(tasks):
-    done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-    for task in done:
-      bar['value'] += 1
-      result["ok" if task.result() == 200 else "notOk"] += 1
-  return result
-
+  with ThreadPoolExecutor(max_workers=10) as executor:
+    loop = asyncio.get_event_loop()
+    for row in fileRel['rows']:
+      row["Nome completo do candidato"] = name
+      quests = []
+      ans = []
+      for c, v in row.items():
+        if c in questsRel:
+          quests.append(questsRel[c])
+          ans.append(v)
+      tasks.append(
+        loop.run_in_executor(
+          executor,
+          formutils.post_answers,
+          *(url, quests, ans)
+        )
+      )
+    result = {
+      "ok": 0,
+      "notOk": 0
+    }
+    lenTasks = len(tasks)
+    if bar:
+      bar.configure(length=lenTasks)
+      bar['value'] = 0
+    for response in await asyncio.gather(*tasks):
+      result["ok" if response == 200 else "notOk"] += 1
+    return result
+    """ 
+    while len(tasks):
+      for asyncio.gather(*tasks)
+      done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+      for task in done:
+        print("Done!")
+        bar['value'] += 1
+        window.update()
+        result["ok" if task.result() == 200 else "notOk"] += 1
+    return result
+    """
 
 window = None
 nameEntry = None
@@ -86,7 +103,7 @@ fileBtn = None
 
 submitBar = None
 
-def rpa_window(url,file,name=None, default_name ="Arthur Aleksandro Alves Silva"):
+def rpa_window(url,file,name="", default_name ="Arthur Aleksandro Alves Silva"):
   # fonte e texto de apresentação
   useFont = "Segoe UI"
   presentText = "Esta aplicação automatiza a submissão em massa de formulários online (Google Forms) usando dados de uma planilha."
@@ -108,8 +125,8 @@ def rpa_window(url,file,name=None, default_name ="Arthur Aleksandro Alves Silva"
   formVar = StringVar()
 
   nameVar.set(name if name else default_name)
-  fileVar.set(file)
-  formVar.set(url)
+  fileVar.set(file if file else "")
+  formVar.set(url if url else "")
 
 
   nameEntry = Entry(window, textvariable=nameVar, font=(useFont, 12))
@@ -142,7 +159,8 @@ def rpa_window(url,file,name=None, default_name ="Arthur Aleksandro Alves Silva"
       loop = asyncio.get_event_loop()
       try:
         messagebox.showwarning('ATENÇÃO', 'É bem provável que esta aplicação fique sem responder durante o processamento. Peço que apenas aguarde e se tiver controle sobre o fomulário verifique se as respostas estão incrementando.')
-        result = loop.run_until_complete(rpa(formVar.get(), fileVar.get(), nameVar.get(), submitBar))
+        future = asyncio.ensure_future(rpa(window, formVar.get(), fileVar.get(), nameVar.get(), submitBar))
+        result = loop.run_until_complete(future)
         messagebox.showinfo('Finalizado', '{} formulários submetidos com sucesso, {} falharam'.format(result['ok'],result['notOk']))
       except Exception as err:
         messagebox.showerror('Erro', 'Algo errado aconteceu :(')
@@ -166,8 +184,6 @@ def rpa_window(url,file,name=None, default_name ="Arthur Aleksandro Alves Silva"
 
   submitBar = Progressbar(window, style='blue.Horizontal.TProgressbar' )
   submitBar.grid(padx=10, pady=10, columnspan=2, sticky=W+E) 
-
-
 
   window.mainloop()
 
